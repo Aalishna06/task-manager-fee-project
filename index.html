@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Team Performance & Attendance</title>
+    <style>
+        /* General styling */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fa;
+            color: #333;
+        }
+        h1, h2 {
+            text-align: center;
+            margin-top: 20px;
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 20px;
+        }
+        /* Styling for team cards */
+        .team-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            width: 30%;
+            margin: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        .pie-chart {
+            height: 300px;
+        }
+        /* Calendar table styling */
+        .calendar {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        table {
+            border-collapse: collapse;
+            width: 90%;
+            max-width: 1200px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+        table:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        td {
+            font-size: 16px;
+            color: #34495e;
+        }
+        /* Styling for completed, ongoing tasks and leaves */
+        .completed {
+            background-color: #27ae60;
+            color: white;
+        }
+        .ongoing {
+            background-color: #e67e22;
+            color: white;
+        }
+        .leaves {
+            background-color: #c0392b;
+            color: white;
+        }
+        /* Styling for button */
+        button {
+            background-color: #3498db;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<!-- Teams Section -->
+<h2>Team Performance</h2>
+<div class="container" id="teams-container">
+    <!-- Team cards will be dynamically generated here -->
+</div>
+
+<!-- Calendar Section -->
+<h2>Attendance and Leaves Calendar</h2>
+<div class="calendar" id="attendance-calendar">
+    <!-- Calendar will be dynamically generated here -->
+</div>
+
+<!-- External charting library (Google Charts) -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<script>
+    // Data for 14 teams
+    const teams = [
+        { name: 'Team 1', tasks: { completed: 30, ongoing: 15, assigned: 45 } },
+        { name: 'Team 2', tasks: { completed: 40, ongoing: 10, assigned: 50 } },
+        { name: 'Team 3', tasks: { completed: 25, ongoing: 20, assigned: 45 } },
+        { name: 'Team 4', tasks: { completed: 35, ongoing: 10, assigned: 45 } },
+        { name: 'Team 5', tasks: { completed: 38, ongoing: 12, assigned: 50 } },
+        { name: 'Team 6', tasks: { completed: 27, ongoing: 18, assigned: 45 } },
+        { name: 'Team 7', tasks: { completed: 42, ongoing: 8, assigned: 50 } },
+        { name: 'Team 8', tasks: { completed: 33, ongoing: 12, assigned: 45 } },
+        { name: 'Team 9', tasks: { completed: 30, ongoing: 15, assigned: 45 } },
+        { name: 'Team 10', tasks: { completed: 20, ongoing: 20, assigned: 40 } },
+        { name: 'Team 11', tasks: { completed: 45, ongoing: 5, assigned: 50 } },
+        { name: 'Team 12', tasks: { completed: 35, ongoing: 10, assigned: 45 } },
+        { name: 'Team 13', tasks: { completed: 28, ongoing: 17, assigned: 45 } },
+        { name: 'Team 14', tasks: { completed: 40, ongoing: 8, assigned: 48 } }
+    ];
+
+    // Load Google Charts library
+    google.charts.load('current', { 'packages': ['corechart'] });
+    google.charts.setOnLoadCallback(initialize);
+
+    // Initialize function to render teams and their charts
+    function initialize() {
+        const teamsContainer = document.getElementById('teams-container');
+
+        teams.forEach((team, index) => {
+            const teamCard = document.createElement('div');
+            teamCard.classList.add('team-card');
+            teamCard.innerHTML = `<h3>${team.name}</h3><div id="piechart${index}" class="pie-chart"></div>`;
+            teamsContainer.appendChild(teamCard);
+
+            // Draw pie chart for each team
+            drawPieChart(team.tasks, `piechart${index}`);
+        });
+
+        generateCalendar(); // Create the attendance calendar
+    }
+
+    // Function to draw pie chart
+    function drawPieChart(taskData, elementId) {
+        const data = google.visualization.arrayToDataTable([
+            ['Task', 'Number'],
+            ['Completed', taskData.completed],
+            ['Ongoing', taskData.ongoing],
+            ['Assigned', taskData.assigned]
+        ]);
+
+        const options = {
+            title: 'Task Performance',
+            pieHole: 0.4,
+            colors: ['#27ae60', '#e67e22', '#3498db'],
+            chartArea: { width: '90%', height: '75%' },
+            legend: { position: 'bottom', textStyle: { fontSize: 14 } }
+        };
+
+        const chart = new google.visualization.PieChart(document.getElementById(elementId));
+        chart.draw(data, options);
+    }
+
+    // Function to generate calendar for attendance
+    function generateCalendar() {
+        const calendar = document.getElementById('attendance-calendar');
+        const table = document.createElement('table');
+        
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th>Team Member</th><th>Attendance</th><th>Leaves</th>';
+        table.appendChild(headerRow);
+
+        // Sample attendance data for team members
+        const members = ['John', 'Alice', 'Bob', 'Carol', 'David'];
+        const attendanceData = [
+            { name: 'John', attendance: 20, leaves: 2 },
+            { name: 'Alice', attendance: 18, leaves: 4 },
+            { name: 'Bob', attendance: 19, leaves: 3 },
+            { name: 'Carol', attendance: 21, leaves: 1 },
+            { name: 'David', attendance: 17, leaves: 5 }
+        ];
+
+        attendanceData.forEach(member => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${member.name}</td>
+                <td class="completed">${member.attendance}</td>
+                <td class="leaves">${member.leaves}</td>
+            `;
+            table.appendChild(row);
+        });
+
+        calendar.appendChild(table);
+    }
+</script>
+
+</body>
+</html>
+
